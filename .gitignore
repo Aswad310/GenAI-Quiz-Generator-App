@@ -10,6 +10,8 @@ __pycache__/
 .jbeval/
 .idea/
 
+ai-email-generation/
+
 # Distribution / packaging
 .Python
 build/
@@ -139,7 +141,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+quiz_generator_app/.env
 .envrc
 .venv
 env/
