@@ -11,6 +11,7 @@ __pycache__/
 .idea/
 
 ai-email-generation/
+langchain-code-reference/
 
 # Distribution / packaging
 .Python

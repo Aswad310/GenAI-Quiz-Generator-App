@@ -66,6 +66,7 @@ def validate_password(value):
 
 
 class CustomUser(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username_validator = None
     username = models.CharField(max_length=30, null=True)
     first_name = models.CharField(max_length=150)
@@ -90,7 +91,7 @@ class CustomUser(AbstractUser):
 
 
 class ManageOtp(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     otp_code = models.IntegerField()
     status = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now=True)
@@ -103,11 +104,11 @@ class ManageOtp(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return str(self.uuid)
+        return str(self.id)
 
 
 class EmailTracking(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     module_name = models.CharField(max_length=255)
     sent_at = models.DateTimeField(auto_now_add=True)
     status = models.IntegerField(default=1)
