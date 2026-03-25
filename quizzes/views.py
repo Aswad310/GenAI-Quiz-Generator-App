@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -42,15 +43,7 @@ class QuizDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        try:
-            quiz = Quiz.objects.get(pk=pk, user=request.user)
-        except Quiz.DoesNotExist:
-            return Response({
-                "message": "Quiz not found.",
-                "status": False,
-                "data": {}
-            }, status=status.HTTP_404_NOT_FOUND)
-
+        quiz = get_object_or_404(Quiz, pk=pk, user=request.user)
         serializer = QuizSerializer(quiz)
         response = {
             "message": "Quiz fetched successfully.",

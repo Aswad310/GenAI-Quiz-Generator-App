@@ -50,10 +50,7 @@ class GenerateQuizAPIViewSerializer(serializers.Serializer):
         title = validated_data.get('title')
         difficulty = validated_data.get('difficulty_level')
 
-        try:
-            document = Document.objects.get(id=document_id, user=request.user)
-        except Document.DoesNotExist:
-            raise serializers.ValidationError({"message": "Document not found."})
+        document = get_object_or_404(Document, id=document_id, user=request.user)
 
         config = GenerationConfig.objects.create(**config_data)
 

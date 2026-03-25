@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -5,6 +6,7 @@ from rest_framework import status
 from django.db import transaction
 from .models import Document
 from .serializers import DocumentSerializer, DocumentCreateAPIViewSerializer
+
 
 class DocumentListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -31,24 +33,12 @@ class DocumentListCreateAPIView(APIView):
         }
         return Response(response, status=status_code)
 
+
 class DocumentDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk, user):
-        try:
-            return Document.objects.get(pk=pk, user=user)
-        except Document.DoesNotExist:
-            return None
-
     def get(self, request, pk):
-        document = self.get_object(pk, request.user)
-        if not document:
-            return Response({
-                "message": "Document not found.",
-                "status": False,
-                "data": {}
-            }, status=status.HTTP_404_NOT_FOUND)
-            
+        document = get_object_or_404(Document, pk=pk, user=request.user)
         serializer = DocumentSerializer(document)
         response = {
             "message": "Document fetched successfully.",
@@ -59,14 +49,7 @@ class DocumentDetailAPIView(APIView):
 
     @transaction.atomic()
     def delete(self, request, pk):
-        document = self.get_object(pk, request.user)
-        if not document:
-            return Response({
-                "message": "Document not found.",
-                "status": False,
-                "data": {}
-            }, status=status.HTTP_404_NOT_FOUND)
-            
+        document = get_object_or_404(Document, pk=pk, user=request.user)
         document.delete()
         response = {
             "message": "Document deleted successfully.",
