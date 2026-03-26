@@ -3,6 +3,8 @@ from .models import GenerationConfig, Quiz, Question, Option
 from documents.models import Document
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from .pipeline import QuizGenerationPipeline
+from .constants import QuizDifficultyChoicesClass
 
 
 class GenerationConfigSerializer(serializers.ModelSerializer):
@@ -29,18 +31,26 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
+    total_questions = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
         fields = '__all__'
         read_only_fields = ['user', 'created_at', 'updated_at']
 
+    def get_total_questions(self, obj):
+        return obj.questions.count()
+
 
 class GenerateQuizAPIViewSerializer(serializers.Serializer):
     document_id = serializers.UUIDField()
     generation_config = GenerationConfigSerializer()
     title = serializers.CharField(max_length=255, required=False, default='Generated Quiz')
-    difficulty_level = serializers.CharField(max_length=50, required=False, default='Medium')
+    difficulty_level = serializers.CharField(
+        max_length=50,
+        required=False,
+        default=QuizDifficultyChoicesClass.medium
+    )
 
     @transaction.atomic()
     def create(self, validated_data):
@@ -54,53 +64,9 @@ class GenerateQuizAPIViewSerializer(serializers.Serializer):
 
         config = GenerationConfig.objects.create(**config_data)
 
-        file_path = document.file.path
-        ext = file_path.split('.')[-1].lower()
-        content = ""
-        if ext == 'pdf':
-            from langchain_community.document_loaders import PyPDFLoader
-            loader = PyPDFLoader(file_path)
-            docs = loader.load()
-            content = "\\n".join([doc.page_content for doc in docs])
-        else:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-
-        content = content[:15000]
-
-        from langchain_ollama import ChatOllama
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_core.output_parsers import JsonOutputParser
-
-        llm = ChatOllama(
-            base_url="http://localhost:11434",
-            model=config.model_name,
-            temperature=config.temperature,
-            format="json"
-        )
-
-        template = """
-You are an expert quiz generator. Generate exactly {number_of_mcqs} multiple choice questions from the provided text.
-The difficulty should be {difficulty}.
-
-Respond with a JSON object containing a single key "questions" mapping to a list of question objects.
-Each question object MUST have:
-- "question_text": The question string
-- "options": A list of exactly 4 strings representing the choices
-- "correct_answer": The exact string from the options list that is the correct answer
-
-Context text:
-{context}
-        """
-        prompt = ChatPromptTemplate.from_template(template)
-        chain = prompt | llm | JsonOutputParser()
-
         try:
-            result = chain.invoke({
-                "number_of_mcqs": config.number_of_mcqs,
-                "difficulty": difficulty,
-                "context": content
-            })
+            pipeline = QuizGenerationPipeline(document.file.path, config, difficulty)
+            result = pipeline.run()
         except Exception as e:
             raise serializers.ValidationError({"message": f"LLM generation failed: {str(e)}"})
 
@@ -110,7 +76,6 @@ Context text:
             generation_config=config,
             title=title,
             difficulty_level=difficulty,
-            total_questions=len(result.get('questions', []))
         )
 
         for i, q_data in enumerate(result.get('questions', [])):
