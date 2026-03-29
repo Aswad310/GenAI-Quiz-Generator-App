@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from .models import QuizAttempt
 from .serializers import (
     QuizAttemptSerializer,
@@ -33,15 +34,7 @@ class SubmitAnswerAPIView(APIView):
 
     @transaction.atomic()
     def post(self, request, attempt_id):
-        try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
-        except QuizAttempt.DoesNotExist:
-            return Response({
-                "message": "Attempt not found.",
-                "status": False,
-                "data": {}
-            }, status=status.HTTP_404_NOT_FOUND)
-
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
         serializer = SubmitAnswerAPIViewSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data, message, status_code = serializer.save(attempt=attempt)
@@ -58,14 +51,7 @@ class FinishAttemptAPIView(APIView):
 
     @transaction.atomic()
     def post(self, request, attempt_id):
-        try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
-        except QuizAttempt.DoesNotExist:
-            return Response({
-                "message": "Attempt not found.",
-                "status": False,
-                "data": {}
-            }, status=status.HTTP_404_NOT_FOUND)
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
 
         # Use an empty dictionary to ensure validation runs successfully 
         # as there might be no fields passed directly into the body.
@@ -85,14 +71,7 @@ class AttemptDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        try:
-            attempt = QuizAttempt.objects.get(pk=pk, user=request.user)
-        except QuizAttempt.DoesNotExist:
-            return Response({
-                "message": "Attempt not found.",
-                "status": False,
-                "data": {}
-            }, status=status.HTTP_404_NOT_FOUND)
+        attempt = get_object_or_404(QuizAttempt, pk=pk, user=request.user)
 
         serializer = QuizAttemptSerializer(attempt)
         response = {

@@ -1,6 +1,7 @@
 from rest_framework import serializers, status
 from django.utils import timezone
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from .models import QuizAttempt, UserAnswer
 from quizzes.models import Quiz, Question, Option
 
@@ -29,10 +30,7 @@ class StartAttemptAPIViewSerializer(serializers.Serializer):
         request = self.context.get('request')
         quiz_id = validated_data.get('quiz_id')
 
-        try:
-            quiz = Quiz.objects.get(id=quiz_id)
-        except Quiz.DoesNotExist:
-            raise serializers.ValidationError({"message": "Quiz not found."})
+        quiz = get_object_or_404(Quiz, id=quiz_id)
 
         attempt = QuizAttempt.objects.create(
             quiz=quiz,
@@ -57,15 +55,9 @@ class SubmitAnswerAPIViewSerializer(serializers.Serializer):
         if attempt.completed_at:
             raise serializers.ValidationError({"message": "Attempt already completed."})
 
-        try:
-            question = Question.objects.get(id=question_id, quiz=attempt.quiz)
-        except Question.DoesNotExist:
-            raise serializers.ValidationError({"message": "Question not found in this quiz."})
+        question = get_object_or_404(Question, id=question_id, quiz=attempt.quiz)
 
-        try:
-            option = Option.objects.get(id=option_id, question=question)
-        except Option.DoesNotExist:
-            raise serializers.ValidationError({"message": "Option not found for this question."})
+        option = get_object_or_404(Option, id=option_id, question=question)
 
         user_answer, created = UserAnswer.objects.update_or_create(
             attempt=attempt,
