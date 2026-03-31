@@ -18,10 +18,11 @@ class QuizSchema(BaseModel):
 
 class QuizGenerationPipeline:
 
-    def __init__(self, file_path, config, difficulty):
+    def __init__(self, file_path, config, difficulty, number_of_mcqs):
         self.file_path = file_path
         self.config = config
         self.difficulty = difficulty
+        self.number_of_mcqs = number_of_mcqs
         self.parser = JsonOutputParser(pydantic_object=QuizSchema)
 
     def load_content(self):
@@ -38,8 +39,8 @@ class QuizGenerationPipeline:
 
     def get_llm(self):
         return ChatOllama(
-            model=self.config.model_name,
-            temperature=self.config.temperature,
+            model=self.config.model.name,
+            temperature=self.config.temp,
             format="json",
             num_ctx=4096
         )
@@ -71,7 +72,7 @@ class QuizGenerationPipeline:
         chain = prompt | llm | self.parser
 
         result = chain.invoke({
-            "number_of_mcqs": self.config.number_of_mcqs,
+            "number_of_mcqs": self.number_of_mcqs,
             "difficulty": self.difficulty,
             "context": content
         })

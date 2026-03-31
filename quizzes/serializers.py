@@ -1,5 +1,5 @@
 from rest_framework import serializers, status
-from .models import GenerationConfig, Quiz, Question, Option
+from .models import GenerationConfig, Quiz, Question, Option, LLMModel
 from documents.models import Document
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -7,10 +7,16 @@ from .pipeline import QuizGenerationPipeline
 from .constants import QuizDifficultyChoicesClass
 
 
+class LLMModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LLMModel
+        fields = '__all__'
+
+
 class GenerationConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = GenerationConfig
-        fields = '__all__'
+        fields = ['id', 'model', 'temp', 'status']
 
 
 class OptionSerializer(serializers.ModelSerializer):
@@ -44,7 +50,7 @@ class QuizSerializer(serializers.ModelSerializer):
 
 class GenerateQuizAPIViewSerializer(serializers.Serializer):
     document_id = serializers.UUIDField()
-    generation_config = GenerationConfigSerializer()
+    number_of_mcqs = serializers.IntegerField(min_value=1, max_value=50)
     title = serializers.CharField(max_length=255, required=False, default='Generated Quiz')
     difficulty_level = serializers.CharField(
         max_length=50,
@@ -56,16 +62,22 @@ class GenerateQuizAPIViewSerializer(serializers.Serializer):
     def create(self, validated_data):
         request = self.context.get('request')
         document_id = validated_data.get('document_id')
-        config_data = validated_data.get('generation_config')
+        number_of_mcqs = validated_data.get('number_of_mcqs')
         title = validated_data.get('title')
         difficulty = validated_data.get('difficulty_level')
 
         document = get_object_or_404(Document, id=document_id, user=request.user)
 
-        config = GenerationConfig.objects.create(**config_data)
+        # Get user's generation config
+        try:
+            config = request.user.generation_config
+        except GenerationConfig.DoesNotExist:
+            raise serializers.ValidationError({
+                "message": "Generation configuration not found for the user. Please set up your generation settings first."
+            })
 
         try:
-            pipeline = QuizGenerationPipeline(document.file.path, config, difficulty)
+            pipeline = QuizGenerationPipeline(document.file.path, config, difficulty, number_of_mcqs)
             result = pipeline.run()
         except Exception as e:
             raise serializers.ValidationError({"message": f"LLM generation failed: {str(e)}"})
@@ -73,8 +85,8 @@ class GenerateQuizAPIViewSerializer(serializers.Serializer):
         quiz = Quiz.objects.create(
             user=request.user,
             document=document,
-            generation_config=config,
             title=title,
+            number_of_mcqs=number_of_mcqs,
             difficulty_level=difficulty,
         )
 
