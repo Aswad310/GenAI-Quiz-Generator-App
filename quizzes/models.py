@@ -26,7 +26,7 @@ class GenerationConfig(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Config for {self.user.username if self.user else 'Unknown User'} - {self.model.name if self.model else 'No Model'}"
+        return f"Configs for {self.user.email if self.user else 'Unknown User'} - {self.model.name if self.model else 'No Model'}"
 
 
 class Quiz(models.Model):

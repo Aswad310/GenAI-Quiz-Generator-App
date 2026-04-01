@@ -35,17 +35,20 @@ class QuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ['quiz']
 
 
-class QuizSerializer(serializers.ModelSerializer):
+class QuizListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        exclude = ('user', 'document')
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class QuizDetailSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
-    total_questions = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
-        fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
-    def get_total_questions(self, obj):
-        return obj.questions.count()
+        exclude = ('user', 'document')
+        read_only_fields = ['created_at', 'updated_at']
 
 
 class GenerateQuizAPIViewSerializer(serializers.Serializer):

@@ -4,6 +4,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from .models import QuizAttempt, UserAnswer
 from quizzes.models import Quiz, Question, Option
+from quizzes.serializers import QuizDetailSerializer
 
 
 class UserAnswerSerializer(serializers.ModelSerializer):
@@ -14,12 +15,12 @@ class UserAnswerSerializer(serializers.ModelSerializer):
 
 
 class QuizAttemptSerializer(serializers.ModelSerializer):
-    answers = UserAnswerSerializer(many=True, read_only=True)
+    quiz = QuizDetailSerializer(read_only=True)
 
     class Meta:
         model = QuizAttempt
         fields = '__all__'
-        read_only_fields = ['user', 'score', 'total_questions', 'started_at', 'completed_at']
+        read_only_fields = ['user', 'score', 'started_at', 'completed_at']
 
 
 class StartAttemptAPIViewSerializer(serializers.Serializer):
@@ -35,7 +36,6 @@ class StartAttemptAPIViewSerializer(serializers.Serializer):
         attempt = QuizAttempt.objects.create(
             quiz=quiz,
             user=request.user,
-            total_questions=quiz.total_questions
         )
 
         data = QuizAttemptSerializer(attempt).data

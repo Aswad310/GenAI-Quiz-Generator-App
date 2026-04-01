@@ -2,10 +2,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from django.db import transaction
 from .models import Quiz, LLMModel, GenerationConfig
-from .serializers import QuizSerializer, GenerateQuizAPIViewSerializer, GenerationConfigSerializer, LLMModelSerializer
+from .serializers import QuizListSerializer, QuizDetailSerializer, GenerateQuizAPIViewSerializer, \
+    GenerationConfigSerializer, \
+    LLMModelSerializer
 
 
 class GenerateQuizAPIView(APIView):
@@ -30,13 +31,13 @@ class QuizListAPIView(APIView):
 
     def get(self, request):
         quizzes = Quiz.objects.filter(user=request.user)
-        serializer = QuizSerializer(quizzes, many=True)
-        response = {
+        serializer = QuizListSerializer(quizzes, many=True)
+
+        return Response({
             "message": "Quizzes fetched successfully.",
             "status": True,
             "data": serializer.data
-        }
-        return Response(response, status=status.HTTP_200_OK)
+        })
 
 
 class QuizDetailAPIView(APIView):
@@ -44,13 +45,13 @@ class QuizDetailAPIView(APIView):
 
     def get(self, request, pk):
         quiz = get_object_or_404(Quiz, pk=pk, user=request.user)
-        serializer = QuizSerializer(quiz)
-        response = {
+        serializer = QuizDetailSerializer(quiz)
+
+        return Response({
             "message": "Quiz fetched successfully.",
             "status": True,
             "data": serializer.data
-        }
-        return Response(response, status=status.HTTP_200_OK)
+        })
 
 
 class GenerationConfigAPIView(APIView):
