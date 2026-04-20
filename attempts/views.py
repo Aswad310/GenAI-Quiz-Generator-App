@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from core.responses import BaseResponse
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from .models import QuizAttempt
@@ -21,12 +22,7 @@ class StartAttemptAPIView(APIView):
         serializer = StartAttemptAPIViewSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data, message, status_code = serializer.save()
-        response = {
-            "message": message,
-            "status": True,
-            "data": data
-        }
-        return Response(response, status=status_code)
+        return BaseResponse(data, message=message, status_code=status_code)
 
 
 class SubmitAnswerAPIView(APIView):
@@ -38,12 +34,7 @@ class SubmitAnswerAPIView(APIView):
         serializer = SubmitAnswerAPIViewSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data, message, status_code = serializer.save(attempt=attempt)
-        response = {
-            "message": message,
-            "status": True,
-            "data": data
-        }
-        return Response(response, status=status_code)
+        return BaseResponse(data, message=message, status_code=status_code)
 
 
 class FinishAttemptAPIView(APIView):
@@ -58,12 +49,7 @@ class FinishAttemptAPIView(APIView):
 
         data, message, status_code = serializer.save()
 
-        response = {
-            "message": message,
-            "status": True,
-            "data": data
-        }
-        return Response(response, status=status_code)
+        return BaseResponse(data, message=message, status_code=status_code)
 
 
 class AttemptDetailAPIView(APIView):
@@ -73,9 +59,4 @@ class AttemptDetailAPIView(APIView):
         attempt = get_object_or_404(QuizAttempt, pk=pk, user=request.user)
 
         serializer = QuizAttemptSerializer(attempt)
-        response = {
-            "message": "Attempt fetched successfully.",
-            "status": True,
-            "data": serializer.data
-        }
-        return Response(response, status=status.HTTP_200_OK)
+        return BaseResponse(serializer.data, message="Attempt fetched successfully.")
