@@ -111,5 +111,5 @@ class GenerateQuizAPIViewSerializer(serializers.Serializer):
                     is_correct=is_correct
                 )
 
-        data = QuizSerializer(quiz).data
+        data = QuizDetailSerializer(quiz).data
         return data, "Quiz generated successfully.", status.HTTP_201_CREATED

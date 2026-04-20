@@ -53,12 +53,11 @@ class FinishAttemptAPIView(APIView):
     def post(self, request, attempt_id):
         attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
 
-        # Use an empty dictionary to ensure validation runs successfully 
-        # as there might be no fields passed directly into the body.
-        data_input = request.data if request.data else {}
-        serializer = FinishAttemptAPIViewSerializer(data=data_input, context={'request': request})
+        serializer = FinishAttemptAPIViewSerializer(instance=attempt, data={})
         serializer.is_valid(raise_exception=True)
-        data, message, status_code = serializer.save(attempt=attempt)
+
+        data, message, status_code = serializer.save()
+
         response = {
             "message": message,
             "status": True,
