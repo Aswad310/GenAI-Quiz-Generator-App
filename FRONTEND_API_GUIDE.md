@@ -28,7 +28,7 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
     "confirm_password": "strongpassword123"
   }
   ```
-- **Response**: Returns `tokens` (refresh/access) and a `message`. OTP is sent to the email.
+- **Response**: Standardized response with `tokens` (refresh/access) inside `data`. OTP is sent to the email.
 
 ### 2. User Login
 - **Endpoint**: `/registration/user-login/`
@@ -40,7 +40,7 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
     "password": "strongpassword123"
   }
   ```
-- **Response**: Returns `tokens`, `email_is_verified` status, and `message`.
+- **Response**: Standardized response with `tokens` and `email_is_verified` status inside `data`.
 
 ### 3. OTP Verification
 - **Endpoint**: `/registration/verify-otp/`
@@ -57,7 +57,7 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
 - **Endpoint**: `/registration/user-detail/`
 - **Method**: `POST`
 - **Headers**: `Authorization: Bearer <access_token>`
-- **Response**: Returns current user's profile (`first_name`, `last_name`, `email`).
+- **Response**: Standardized response with profile data (`first_name`, `last_name`, `email`) inside `data`.
 
 ### 5. Resend OTP
 - **Endpoint**: `/registration/resend-otp/`
@@ -97,7 +97,7 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
 ### 2. List Documents
 - **Endpoint**: `/documents/`
 - **Method**: `GET`
-- **Response**: List of all uploaded documents for the current user.
+- **Response**: Paginated list of all uploaded documents for the current user.
 
 ### 3. Delete Document
 - **Endpoint**: `/documents/<uuid:pk>/`
@@ -126,7 +126,7 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
 ### 3. List Available LLM Models
 - **Endpoint**: `/quizzes/models/`
 - **Method**: `GET`
-- **Response**: List of supported LLM models (e.g., GPT-4, Gemini 1.5).
+- **Response**: Paginated list of supported LLM models (e.g., GPT-4, Gemini 1.5).
 
 ### 4. Quiz Constants (Frontend Reference)
 - **Difficulty Levels**: `Easy`, `Medium`, `High`
@@ -156,7 +156,7 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
 ### 1. List All Quizzes
 - **Endpoint**: `/quizzes/`
 - **Method**: `GET`
-- **Response**: Returns a list of all generated quizzes for the user.
+- **Response**: Returns a paginated list of all generated quizzes for the user.
 
 ### 2. Get Quiz Detail
 - **Endpoint**: `/quizzes/<uuid:pk>/`
@@ -204,21 +204,36 @@ This document provides a comprehensive overview of the Backend API for the Quiz 
 
 ## 🛠️ Data Standards
 
-### Common Success Response Format
-Most endpoints (except registration) follow this structure:
+### 1. Standard Success Response
+All endpoints follow this structure:
 ```json
 {
-  "message": "Action successful",
   "status": true,
-  "data": { ... }
+  "message": "Description of action",
+  "data": { ... } 
 }
 ```
 
-### Error Handling
-Errors are returned with appropriate HTTP status codes (400, 401, 403, 404) and usually follow this structure:
+### 2. Paginated Response (List APIs)
+Endpoints that return lists (Documents, Quizzes, Models) include navigation metadata and use the `results` key:
 ```json
 {
-  "message": "Specific error description here"
+  "status": true,
+  "message": "Data fetched successfully.",
+  "count": 45,
+  "next": "http://api.yoursite.com/api/quizzes/?page=2",
+  "previous": null,
+  "results": [ ... ]
+}
+```
+
+### 3. Error Handling
+Errors also follow a standardized structure matching the status codes (400, 401, 404, etc.):
+```json
+{
+  "status": false,
+  "message": "Validation failed / Not found / etc.",
+  "data": { ... } // Contains field-specific errors if status is 400
 }
 ```
 
